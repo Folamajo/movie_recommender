@@ -70,19 +70,53 @@ target_user_unrated_movies = target_user_row[target_user_row == 0.0]
    #3. sum the weighted scores across all similar users 
    #4. divide by the same of similarity scores for users who rated the movie (Giving a weighted average rating per movie)
 
+#4.6.1
+#This is the ratings given by the top 5 users for all candidate movies 
 top_five_similar_rating = data_fillna.loc[top_five_similar.index, target_user_unrated_movies.index]
-# for i in top_five_similar_rating.index:
-#    each_rating = top_five_similar_rating.loc[i]
+#Becuase our data frame and series have the same index we use (.mul) to calculate weighted ratings
+#4.6.2
+weighted_rating = top_five_similar_rating.mul(top_five_similar.values, axis = 0)
+#4.6.3 gives us the sum of all the ratings of each movie by top 5 similar users
+#Since there were a lot of movies that were not rated by the top 5 users we can filter them out 
+weighted_scores = weighted_rating.sum(axis = 0)
+# non_zero_weighted_score = weighted_scores[weighted_scores > 0]
+# top_five_similar_rating = top_five_similar_rating[top_five_similar_rating > 0]
+#4.6.4 
+# print(non_zero_weighted_score)
+# print(top_five_similar_rating)
+# print(weighted_scores)
+# print("Dataframe index:", top_five_similar_rating.index)
+# print("Series index:", top_five_similar.index )
+# print("Mismatches:", top_five_similar_rating.index.difference(top_five_similar_rating.index))
 
-#    print(each_rating)
-print(top_five_similar_rating.loc[365])
+#Filter movies with non-zero weighted scores
+non_zero_movies = weighted_scores[weighted_scores > 0]
+predicted_ratings = {}
+
+for movie in non_zero_movies.index:
+   ratings = top_five_similar_rating[movie]
+   rated_by_users = ratings[ratings > 0].index
+
+   if len(rated_by_users) == 0:
+      continue
+
+   similarities = top_five_similar.loc[rated_by_users]
+   denominator = similarities.sum().item()
+
+   if denominator > 0:
+      predicted_rating = non_zero_movies[movie] / denominator
+      predicted_ratings[movie] = predicted_rating
+      # print(type(predicted_ratings))
+      # print(predicted_ratings.head())        
+predicted_ratings = pd.Series(predicted_ratings)
+recommended_movies = predicted_ratings.sort_values(ascending=False)
+print(recommended_movies.head(5))
+# print(type(predicted_ratings))
+# print(predicted_ratings.head())
+   # rated_by_users = ratings[ratings > 0].index
+
+   # if len(rated_by_users) == 0:
+   #    continue
 
 
-# print(data_fillna)
-# print(top_five_similar)
-#choose user you want to
-
-# pivot_table = merged_df.pivot(index ="userId", columns="title", values="rating")
-# # # print(movies_df.head(5))
-# # # print(ratings_df.head(5))
-# print(pivot_table.head(5))
+# print(non_zero_movies)
